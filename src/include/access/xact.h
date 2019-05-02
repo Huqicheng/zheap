@@ -15,6 +15,8 @@
 #define XACT_H
 
 #include "access/transam.h"
+#include "access/undolog.h"
+#include "access/undorecord.h"
 #include "access/xlogreader.h"
 #include "lib/stringinfo.h"
 #include "nodes/pg_list.h"
@@ -355,6 +357,8 @@ extern bool IsTransactionState(void);
 extern bool IsAbortedTransactionBlockState(void);
 extern TransactionId GetTopTransactionId(void);
 extern TransactionId GetTopTransactionIdIfAny(void);
+extern UndoCompressionInfo *GetTopTransactionUndoCompressionInfo(
+													UndoLogCategory category);
 extern TransactionId GetCurrentTransactionId(void);
 extern TransactionId GetCurrentTransactionIdIfAny(void);
 extern TransactionId GetStableLatestTransactionId(void);

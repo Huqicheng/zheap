@@ -191,6 +191,8 @@ typedef struct TransactionStateData
 	bool		didLogXid;		/* has xid been included in WAL record? */
 	int			parallelModeLevel;	/* Enter/ExitParallelMode counter */
 	bool		chain;			/* start a new block after this one */
+	UndoCompressionInfo undo_compression[UndoLogCategories]; /* undo page
+															compression info. */
 	struct TransactionStateData *parent;	/* back link to parent */
 } TransactionStateData;
 
@@ -410,6 +412,15 @@ TransactionId
 GetTopTransactionIdIfAny(void)
 {
 	return XidFromFullTransactionId(XactTopFullTransactionId);
+}
+
+/*
+ * Return reference to the undo compression info of the top transaction.
+ */
+UndoCompressionInfo *
+GetTopTransactionUndoCompressionInfo(UndoLogCategory category)
+{
+	return &(TopTransactionStateData.undo_compression[category]);
 }
 
 /*
@@ -1967,6 +1978,12 @@ StartTransaction(void)
 	 */
 	nUnreportedXids = 0;
 	s->didLogXid = false;
+
+	/*
+	 * Initialize undo compression info.
+	 */
+	memset(&s->undo_compression, 0,
+		   UndoLogCategories * sizeof(UndoCompressionInfo));
 
 	/*
 	 * must initialize resource-management stuff first
