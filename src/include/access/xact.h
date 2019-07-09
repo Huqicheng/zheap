@@ -445,7 +445,6 @@ extern void SetCurrentUndoLocation(UndoRecPtr urec_ptr,
 				UndoLogCategory category);
 
 extern void ApplyUndoActions(void);
-extern void SetUndoActionsInfo(void);
 extern void ResetUndoActionsInfo(void);
 extern bool CanPerformUndoActions(void);
 
