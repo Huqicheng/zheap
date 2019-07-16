@@ -453,7 +453,6 @@ UndoGetBufferSlot(UndoRecordInsertContext *context,
 	 */
 	if (InRecovery)
 		action = XLogReadBufferForRedoBlock(context->alloc_context.xlog_record,
-											SMGR_UNDO,
 											rnode,
 											UndoLogForkNum,
 											blk,
@@ -462,8 +461,7 @@ UndoGetBufferSlot(UndoRecordInsertContext *context,
 											&buffer);
 	else
 	{
-		buffer = ReadBufferWithoutRelcache(SMGR_UNDO,
-										   rnode,
+		buffer = ReadBufferWithoutRelcache(rnode,
 										   UndoLogForkNum,
 										   blk,
 										   rbm,
@@ -1212,8 +1210,7 @@ UndoGetOneRecord(UnpackedUndoRecord *urec, UndoRecPtr urp, RelFileNode rnode,
 		/* If we already have a buffer then no need to allocate a new one. */
 		if (!BufferIsValid(buffer))
 		{
-			buffer = ReadBufferWithoutRelcache(SMGR_UNDO,
-											   rnode, UndoLogForkNum, cur_blk,
+			buffer = ReadBufferWithoutRelcache(rnode, UndoLogForkNum, cur_blk,
 											   RBM_NORMAL, NULL,
 											   RelPersistenceForUndoLogCategory(category));
 
@@ -1444,8 +1441,7 @@ PrefetchUndoPages(RelFileNode rnode, int prefetch_target, int *prefetch_pages,
 
 	while (nprefetch--)
 	{
-		PrefetchBufferWithoutRelcache(SMGR_UNDO, rnode, MAIN_FORKNUM,
-									  startblock++,
+		PrefetchBufferWithoutRelcache(rnode, MAIN_FORKNUM, startblock++,
 									  category == UNDO_TEMP);
 		(*prefetch_pages)++;
 	}
@@ -1767,7 +1763,7 @@ UndoGetPrevRecordLen(UndoRecPtr urp, Buffer input_buffer,
 		/* Read buffer if the current buffer is not valid. */
 		if (!BufferIsValid(buffer))
 		{
-			buffer = ReadBufferWithoutRelcache(SMGR_UNDO, rnode, UndoLogForkNum,
+			buffer = ReadBufferWithoutRelcache(rnode, UndoLogForkNum,
 											   cur_blk, RBM_NORMAL, NULL,
 											   persistence);
 
@@ -1873,8 +1869,7 @@ UndoBlockGetFirstUndoRecord(BlockNumber blkno, UndoRecPtr urec_ptr,
 
 	UndoRecPtrAssignRelFileNode(rnode, urec_ptr);
 
-	buffer = ReadBufferWithoutRelcache(SMGR_UNDO,
-									   rnode, UndoLogForkNum, blkno,
+	buffer = ReadBufferWithoutRelcache(rnode, UndoLogForkNum, blkno,
 									   RBM_NORMAL, NULL,
 									   RelPersistenceForUndoLogCategory(category));
 
