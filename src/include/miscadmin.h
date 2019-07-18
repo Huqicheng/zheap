@@ -170,6 +170,8 @@ extern PGDLLIMPORT struct Latch *MyLatch;
 extern int32 MyCancelKey;
 extern int	MyPMChildSlot;
 
+extern bool applying_subxact_undo;
+
 extern char OutputFileName[];
 extern PGDLLIMPORT char my_exec_path[];
 extern char pkglib_path[];
@@ -424,6 +426,7 @@ extern AuxProcType MyAuxProcType;
  *****************************************************************************/
 
 /* in utils/init/postinit.c */
+extern bool dbid_exists(Oid dboid);
 extern void pg_split_opts(char **argv, int *argcp, const char *optstr);
 extern void InitializeMaxBackends(void);
 extern void InitPostgres(const char *in_dbname, Oid dboid, const char *username,

@@ -1871,7 +1871,6 @@ GetErrorContextStack(void)
 	return edata->context;
 }
 
-
 /*
  * Initialization of error output file
  */
@@ -1954,7 +1953,6 @@ set_syslog_parameters(const char *ident, int facility)
 		syslog_facility = facility;
 	}
 }
-
 
 /*
  * Write a message line to syslog
