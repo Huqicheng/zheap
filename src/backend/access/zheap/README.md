@@ -14,7 +14,7 @@ future inserts or updates; nothing is returned to the operating system.  A
 similar problem occurs for tuples that are deleted. zheap will prevent bloat
 (a) by allowing in-place updates in common cases and (b) by reusing space as
 soon as a transaction that has performed a delete or non-in-place-update has
-committed.  In short, with this new storage, whenever possible, we’ll avoid
+committed.  In short, with this new storage, whenever possible, weâ€™ll avoid
 creating bloat in the first place.
 
 2. Reduce write amplification both by avoiding rewrites of heap pages and by
@@ -27,7 +27,7 @@ updating every index.
 In-place updates will be supported except when (a) the new tuple is larger
 than the old tuple and the increase in size makes it impossible to fit the
 larger tuple onto the same page or (b) some column is modified which is
-covered by an index that has not been modified to support “delete-marking”.
+covered by an index that has not been modified to support â€œdelete-markingâ€.
 We have not begun work on delete-marking support for indexes yet, but intend
 to support it at least for btree indexes.
 
@@ -123,7 +123,7 @@ Copy: Similar to insert, we need to store the corresponding TID (block number,
 offset number) for a tuple in undo to identify the same during undo replay. But,
 we can minimize the number of undo records written for a page. First, we
 identify the unused offset ranges for a page, then insert one undo record for
-each offset range. For example, if we’re about to insert in offsets
+each offset range. For example, if weâ€™re about to insert in offsets
 (2,3,5,9,10,11), we insert three undo records covering offset ranges (2,3),
 (5,5), and (9,11), respectively. For recovery, we insert a single WAL record
 containing the above-mentioned offset ranges along with some minimal
@@ -138,8 +138,8 @@ which we hold a pointer might be updated under us.
 
 Insert .. On Conflict: The design is similar to current heap such that we use the
 speculative token to detect conflicts.  We store the speculative token in undo
-instead of in the tuple header (CTID) simply because zheap’s tuple header
-doesn’t have CTID. Additionally, we set a bit in tuple header to indicate
+instead of in the tuple header (CTID) simply because zheapâ€™s tuple header
+doesnâ€™t have CTID. Additionally, we set a bit in tuple header to indicate
 speculative insertion.  ZheapTupleSatisfiesDirty routine checks this bit and
 fetches a speculative token from undo.
 
@@ -173,7 +173,7 @@ Subtransactions
 ----------------
 zheap only uses the toplevel transaction ID; subtransactions that modify a
 zheap do not need separate transaction IDs.  In the regular heap, when
-subtransactions are present, the subtransaction’s XID is used to make tuple
+subtransactions are present, the subtransactionâ€™s XID is used to make tuple
 visibility decisions correctly.  In a zheap, subtransaction abort is instead
 handled by using undo to reverse changes to the zheap pages. This design
 minimizes consumption of transaction slots and pg_xact space, and ensures that
@@ -218,8 +218,8 @@ but that will lead to increase in a space used by each transaction slot.
 
 We can also reuse space if a transaction frees up space on the page (e.g. by
 delete) and then tries to use additional space (e.g. by a subsequent insert).
-We can’t in general reuse space freed up by a transaction until it commits,
-because if it aborts we’ll need that space during undo; but an insert or
+We canâ€™t in general reuse space freed up by a transaction until it commits,
+because if it aborts weâ€™ll need that space during undo; but an insert or
 update could reuse space freed up by earlier operations in the same
 transaction, since all or none of them will roll back. This is a good
 optimization, but this needs some more thought.
@@ -236,7 +236,7 @@ search from the previous block instead of repeatedly returning the same block.
 I think updating it on every such operation can be costly, so we can perform
 it only after some threshold number, so later we might want to add a facility
 to track potentially available freespace and merge into the main data
-structure.  We also want to make FSM crash-safe, since we can’t count on
+structure.  We also want to make FSM crash-safe, since we canâ€™t count on
 VACUUM to recover free space that we neglect to record.
 
 Page format
@@ -258,7 +258,7 @@ much more at tuple level, so we come out ahead overall.
 Alignment padding
 ------------------
 We omit all alignment padding for pass-by-value types. Even in the current heap,
-we never point directly to such values, so the alignment padding doesn’t help
+we never point directly to such values, so the alignment padding doesnâ€™t help
 much; it lets us fetch the value using a single instruction, but that is all.
 Pass-by-reference types will work as they do in the heap.  Many pass-by-reference
 data types will be varlena data types (typlen = -1) with short varlena headers so
@@ -268,7 +268,7 @@ box) then we'll still end up with padding.  We can't directly access unaligned v
 instead, we need to use memcpy.  We believe that the space savings will more than pay
 for the additional CPU costs.
 
-We don’t need alignment padding between the tuple header and the tuple data as
+We donâ€™t need alignment padding between the tuple header and the tuple data as
 we always make a copy of the tuple to support in-place updates. Likewise, we ideally
 don't need any alignment padding between tuples. However, there are places in zheap
 code where we access tuple header directly from page (e.g. zheap_delete, zheap_update,
@@ -291,7 +291,7 @@ given TID and subsequently written to the undo log might be visible; or
 (c) there might be nothing visible at all.  To check the visibility of a
 tuple, we fetch the transaction slot number stored in the tuple header, and
 then get the transaction id and undo record pointer from transaction slot.
-Next, we check the current tuple’s visibility based on transaction id fetched
+Next, we check the current tupleâ€™s visibility based on transaction id fetched
 from transaction slot and the last operation performed on the tuple.  For
 example, if the last operation on tuple is a delete and the xid is visible to
 our snapshot, then we return NULL indicating no visible tuple. But if the xid
@@ -306,7 +306,7 @@ or reach the initially inserted tuple; if that is also not visible, we can
 return NULL.
 
 During visibility checking of a tuple in a zheap page or an undo chain, if we
-find that the tuple’s transaction slot has been reused, we retrieve the
+find that the tupleâ€™s transaction slot has been reused, we retrieve the
 transaction information (xid and cid that has modified the tuple) of that
 tuple from undo.
 
@@ -328,7 +328,7 @@ The difference between the oldest running XID and the newest XID is still
 limited to 2 billion because of the way that snapshots work.  Moreover, the
 oldest XID that still has undo must have an XID age less than 2 billion: among
 other problems, this is currently the limit for how long commit status data
-can be retained, and it would be bad if we had undo data but didn’t know
+can be retained, and it would be bad if we had undo data but didnâ€™t know
 whether or not to apply the undo actions.  Currently, this limitation is
 enforced by piggybacking on the existing wraparound machinery.
 
@@ -415,7 +415,7 @@ Applying undo actions
 In many cases, the same page will be modified multiple times by the same
 transaction.  We can save locking and reduce WAL generation by collecting all
 of the undo records for a given page and then applying them all at once.
-However, it’s difficult to collect all of the records that might apply to a
+However, itâ€™s difficult to collect all of the records that might apply to a
 page from an arbitrarily large undo log in an efficient manner; in particular,
 we want to avoid rereading the same undo pages multiple times.  Currently, we
 collect all consecutive records which apply to the same page and then apply
@@ -438,7 +438,7 @@ block generated by that transaction. Otherwise, we rewind the undo pointer in
 the page slot to the last record for that block that precedes the last undo
 record we applied.  Because applying undo also always updates the transaction
 slot on the page, either rewinding it or clearing it completely, we can
-always skip applying undo if we find that it’s already been applied
+always skip applying undo if we find that itâ€™s already been applied
 previously.  This could happen if the application of undo for a given
 transaction is interrupted a crash, or if it fails for some reason and is
 retried later.
@@ -455,18 +455,18 @@ can be ignored; it has already been applied or is no longer relevant.  After a
 toplevel transaction abort, undo space is not recycled.  However, after a
 subtransaction abort, we rewind the insert pointer to wherever it was at the
 start of the subtransaction, so that the undo for the toplevel transaction
-remains contiguous.  We can’t do the same for toplevel aborts as that might
+remains contiguous.  We canâ€™t do the same for toplevel aborts as that might
 contain special undo records related to transaction slots that were reused and
-we can’t afford to lose those.  We write these special undo records only for
-toplevel transaction when it doesn’t find any free transaction slot or there
+we canâ€™t afford to lose those.  We write these special undo records only for
+toplevel transaction when it doesnâ€™t find any free transaction slot or there
 is no transaction slot which contains transaction that is all-visible.  In
 such cases, we reuse the committed transaction slots and write undo record
 which contains transaction information for them as we might need that
-information for transaction which still can’t see the committed transaction.
+information for transaction which still canâ€™t see the committed transaction.
 We mark all such slots (that belongs to committed transactions) as available
 for reuse in one shot as doing it one slot at a time is quite costly.  Since
 we might still need the special undo records for the transaction slots other
-than the current transaction, we can’t simply rewind the insert pointer.  Note
+than the current transaction, we canâ€™t simply rewind the insert pointer.  Note
 that we do this only for toplevel transactions; if we need the new slot when
 in a subtransaction, we reclaim only a single transaction slot.
 
@@ -523,9 +523,9 @@ We consider undo for a transaction to be discardable once its XID  is smaller
 than oldestXmin.
 
 Ideally, for the aborted transactions once the undo actions are replayed, we
-should be able to discard it’s undo, however, it might contain the undo records
-for reused transaction slots, so we can’t discard them until it becomes
-smaller than oldestXmin.  Also, we can’t discard the undo for the aborted
+should be able to discard itâ€™s undo, however, it might contain the undo records
+for reused transaction slots, so we canâ€™t discard them until it becomes
+smaller than oldestXmin.  Also, we canâ€™t discard the undo for the aborted
 transaction if there is a preceding transaction which is committed and not
 all-visible.  We can allow undo for aborted transactions to be discarded
 immediately if we remember in the first undo record of the transaction whether
@@ -561,12 +561,12 @@ so we must account for the possibility that undo could be discarded at any
 time.  We do maintain the oldest xid that have undo (oldestXidHavingUndo).
 Undo worker updates the value of oldestXidHavingUndo after discarding all the
 undo.  Backends consider all transactions that precede oldestXidHavingUndo as
-all-visible, so they normally don’t try to fetch the undo which is already
+all-visible, so they normally donâ€™t try to fetch the undo which is already
 discarded.  However, there is a race condition where backend decides that the
 transaction is greater than oldestXidHavingUndo and it needs to fetch the undo
 record and in the meantime undo worker discards the corresponding undo record.
 To handle such race conditions, we need to maintain some synchronization
-between backends and undo worker so that backends don’t try to access already
+between backends and undo worker so that backends donâ€™t try to access already
 discarded undo.  So whenever undo fetch is trying to read a undo record from
 an undo log, first it needs to acquire a log->discard_lock in SHARED mode for
 the undo log and check that the undo record pointer is not less than
